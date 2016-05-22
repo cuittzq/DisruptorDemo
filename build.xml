@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<!--
+   Copyright 2011 Adrian Sutton
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<project name="disruptorWizard" default="dist">
+
+    <property name="version" value="1.0" />
+
+    <property name="dest" location="target" />
+    <property name="src" location="src" />
+    <property name="src.main" location="${src}/main/java" />
+    <property name="src.test" location="${src}/test/java" />
+    <property name="dest.compile" location="${dest}/compile" />
+    <property name="dest.test" location="${dest}/test/classes" />
+    <property name="dest.test.output" location="${dest}/test/output" />
+    <property name="dest.jar" location="${dest}/${ant.project.name}.jar" />
+    <property name="dest.javadoc" location="${dest}/docs" />
+    <property name="lib" location="lib" />
+    <property name="lib.dist" location="${lib}/dist" />
+    <property name="lib.test" location="${lib}/test" />
+
+    <path id="production.classpath">
+        <fileset dir="${lib.dist}" includes="*.jar" />
+    </path>
+
+    <target name="compile">
+        <mkdir dir="${dest.compile}" />
+
+        <javac destdir="${dest.compile}" srcdir="${src.main}" source="1.6" target="1.6" includeantruntime="false" classpathref="production.classpath" />
+    </target>
+
+    <target name="compile-tests">
+        <mkdir dir="${dest.test}" />
+        <mkdir dir="${dest.test.output}" />
+
+        <javac destdir="${dest.test}" srcdir="${src.test}" source="1.6" target="1.6" includeantruntime="false">
+            <classpath>
+                <pathelement location="${dest.compile}" />
+                <fileset dir="${lib.dist}" includes="*.jar" />
+                <fileset dir="${lib.test}" includes="*.jar" />
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="test" depends="compile, compile-tests">
+        <junit haltonerror="true" haltonfailure="true" printsummary="true" tempdir="${dest.test.output}">
+            <batchtest todir="${dest.test.output}">
+                <fileset dir="${dest.test}" includes="**/*Test.class" />
+            </batchtest>
+            <classpath>
+                <pathelement location="${dest.compile}" />
+                <pathelement location="${dest.test}" />
+                <fileset dir="${lib.dist}" includes="*.jar" />
+                <fileset dir="${lib.test}" includes="*.jar" />
+            </classpath>
+        </junit>
+    </target>
+
+    <target name="javadoc">
+        <javadoc sourcepath="${src.main}" destdir="${dest.javadoc}" classpathref="production.classpath" />
+    </target>
+
+    <target name="dist" depends="compile, test, javadoc">
+        <mkdir dir="${dest}" />
+
+        <tstamp>
+            <format property="TODAY" pattern="yyyy-MM-dd" locale="en,UK" />
+        </tstamp>
+
+        <jar destfile="${dest.jar}">
+            <manifest>
+                <attribute name="Specification-Title" value="Disruptor Wizard" />
+                <attribute name="Specification-Version" value="${version}" />
+                <attribute name="Specification-Vendor" value="Adrian Sutton" />
+                <attribute name="Implementation-Title" value="${ant.project.name}" />
+                <attribute name="Implementation-Version" value="${version} ${TODAY}" />
+                <attribute name="Implementation-Vendor" value="Adrian Sutton" />
+            </manifest>
+            <fileset dir="${dest.compile}" />
+        </jar>
+    </target>
+
+    <target name="clean">
+        <delete dir="${dest}" />
+    </target>
+</project>
